@@ -1,6 +1,6 @@
 import './style.css'
 import { ABSTRAKT_LOGO_URL } from './branding.ts'
-import { DEAL_TAB_ORDER, getDeal, type DealTabId } from './deal-data.ts'
+import { DEAL_TAB_ORDER, DEAL_TAB_SHORT_LABEL, getDeal, type DealTabId } from './deal-data.ts'
 import { NDA_BODY_HTML, NDA_TITLE, NDA_PARTIES } from './nda-content.ts'
 
 const AUTH_KEY = 'abstrakt_co_invest_auth_v1'
@@ -244,6 +244,7 @@ function dealView(dealId: string, tab: DealTabId): string {
 
   const tabButtons = tabIds.map((id) => {
     const label = deal.tabs[id]
+    const shortLabel = DEAL_TAB_SHORT_LABEL[id]
     const isActive = id === tab
     return `
       <button
@@ -255,8 +256,10 @@ function dealView(dealId: string, tab: DealTabId): string {
         aria-controls="deal-panel-${cid}-${id}"
         tabindex="${isActive ? 0 : -1}"
         data-tab="${id}"
+        title="${escapeHtml(label)}"
       >
-        <span class="tabs__btn-label">${label}</span>
+        <span class="tabs__btn-label tabs__btn-label--full">${escapeHtml(label)}</span>
+        <span class="tabs__btn-label tabs__btn-label--short">${escapeHtml(shortLabel)}</span>
       </button>
     `
   })
@@ -279,11 +282,23 @@ function dealView(dealId: string, tab: DealTabId): string {
     })
     .join('')
 
-  const mobileOptions = tabIds
+  const mobileListOptions = tabIds
     .map((id) => {
       const label = escapeHtml(deal.tabs[id])
-      const sel = id === tab ? ' selected' : ''
-      return `<option value="${id}"${sel}>${label}</option>`
+      const active = id === tab
+      return `
+        <button
+          type="button"
+          class="tabs-folder__mobile-option ${active ? 'tabs-folder__mobile-option--active' : ''}"
+          role="option"
+          data-tab="${id}"
+          data-deal-mobile-option="${cid}"
+          aria-selected="${active}"
+        >
+          <span class="tabs-folder__mobile-option-text">${label}</span>
+          ${active ? '<span class="tabs-folder__mobile-option-check" aria-hidden="true">✓</span>' : ''}
+        </button>
+      `
     })
     .join('')
 
@@ -310,16 +325,40 @@ function dealView(dealId: string, tab: DealTabId): string {
         </div>
 
         <div class="tabs-folder">
-          <div class="tabs-folder__mobile">
-            <label class="tabs-folder__mobile-label" for="deal-tab-select-${cid}">Section</label>
-            <select
-              class="tabs-folder__select"
-              id="deal-tab-select-${cid}"
-              aria-controls="deal-panels-${cid}"
-              data-deal-tab-select="${cid}"
+          <div class="tabs-folder__mobile" data-deal-mobile-picker="${cid}">
+            <label class="tabs-folder__mobile-label" id="deal-tab-mlabel-${cid}" for="deal-tab-trigger-${cid}"
+              >Section</label
             >
-              ${mobileOptions}
-            </select>
+            <div class="tabs-folder__mobile-backdrop" hidden data-deal-tab-backdrop="${cid}" aria-hidden="true"></div>
+            <div class="tabs-folder__mobile-wrap">
+              <button
+                type="button"
+                class="tabs-folder__mobile-trigger"
+                id="deal-tab-trigger-${cid}"
+                aria-expanded="false"
+                aria-haspopup="listbox"
+                aria-labelledby="deal-tab-mlabel-${cid}"
+                aria-controls="deal-tab-listbox-${cid}"
+                data-deal-tab-trigger="${cid}"
+              >
+                <span class="tabs-folder__mobile-trigger-text" data-deal-tab-trigger-label="${cid}"
+                  >${escapeHtml(deal.tabs[tab])}</span
+                >
+                <span class="tabs-folder__mobile-trigger-chev" aria-hidden="true">
+                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M5 7.5l5 5 5-5" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </span>
+              </button>
+              <div
+                class="tabs-folder__mobile-panel"
+                id="deal-tab-listbox-${cid}"
+                role="listbox"
+                hidden
+                data-deal-tab-listbox="${cid}"
+                aria-labelledby="deal-tab-mlabel-${cid}"
+              >
+                ${mobileListOptions}
+              </div>
+            </div>
           </div>
           <div
             class="tabs tabs-folder__strip"
@@ -344,9 +383,9 @@ function dealView(dealId: string, tab: DealTabId): string {
 }
 
 function syncDealTabDom(canonicalDealId: string, activeTab: DealTabId): void {
-  const d = getDeal(canonicalDealId)
-  if (!d) return
-  const tabIds = DEAL_TAB_ORDER.filter((id) => id in d.tabs)
+  const deal = getDeal(canonicalDealId)
+  if (!deal) return
+  const tabIds = DEAL_TAB_ORDER.filter((id) => id in deal.tabs)
   for (const tid of tabIds) {
     const on = tid === activeTab
     const panel = document.getElementById(`deal-panel-${canonicalDealId}-${tid}`)
@@ -361,10 +400,39 @@ function syncDealTabDom(canonicalDealId: string, activeTab: DealTabId): void {
     }
   }
 
-  const tabSelect = document.querySelector<HTMLSelectElement>(`[data-deal-tab-select="${canonicalDealId}"]`)
-  if (tabSelect && tabSelect.value !== activeTab) {
-    tabSelect.value = activeTab
+  const labelEl = document.querySelector<HTMLElement>(`[data-deal-tab-trigger-label="${canonicalDealId}"]`)
+  if (labelEl) {
+    labelEl.textContent = deal.tabs[activeTab]
   }
+
+  document.querySelectorAll<HTMLButtonElement>(`[data-deal-mobile-option="${canonicalDealId}"]`).forEach((opt) => {
+    const id = opt.dataset.tab as DealTabId
+    const on = id === activeTab
+    opt.classList.toggle('tabs-folder__mobile-option--active', on)
+    opt.setAttribute('aria-selected', String(on))
+    const row = opt.querySelector('.tabs-folder__mobile-option-check')
+    if (on && !row) {
+      const check = document.createElement('span')
+      check.className = 'tabs-folder__mobile-option-check'
+      check.setAttribute('aria-hidden', 'true')
+      check.textContent = '✓'
+      opt.appendChild(check)
+    } else if (!on && row) {
+      row.remove()
+    }
+  })
+
+  closeMobileTabPicker(canonicalDealId)
+}
+
+function closeMobileTabPicker(canonicalDealId: string): void {
+  const trigger = document.querySelector<HTMLButtonElement>(`[data-deal-tab-trigger="${canonicalDealId}"]`)
+  const panel = document.querySelector<HTMLElement>(`[data-deal-tab-listbox="${canonicalDealId}"]`)
+  const backdrop = document.querySelector<HTMLElement>(`[data-deal-tab-backdrop="${canonicalDealId}"]`)
+  trigger?.setAttribute('aria-expanded', 'false')
+  panel?.setAttribute('hidden', '')
+  backdrop?.setAttribute('hidden', '')
+  document.body.style.overflow = ''
 }
 
 function setupDealTabs(canonicalDealId: string): void {
@@ -415,10 +483,46 @@ function setupDealTabs(canonicalDealId: string): void {
     }
   })
 
-  const mobileSelect = document.querySelector<HTMLSelectElement>(`[data-deal-tab-select="${canonicalDealId}"]`)
-  mobileSelect?.addEventListener('change', () => {
-    const v = mobileSelect.value as DealTabId
-    if (ordered.includes(v)) select(v, false)
+  const trigger = document.querySelector<HTMLButtonElement>(`[data-deal-tab-trigger="${canonicalDealId}"]`)
+  const panel = document.querySelector<HTMLElement>(`[data-deal-tab-listbox="${canonicalDealId}"]`)
+  const backdrop = document.querySelector<HTMLElement>(`[data-deal-tab-backdrop="${canonicalDealId}"]`)
+
+  const setMobileOpen = (open: boolean) => {
+    trigger?.setAttribute('aria-expanded', String(open))
+    if (open) {
+      panel?.removeAttribute('hidden')
+      backdrop?.removeAttribute('hidden')
+      document.body.style.overflow = 'hidden'
+    } else {
+      panel?.setAttribute('hidden', '')
+      backdrop?.setAttribute('hidden', '')
+      document.body.style.overflow = ''
+    }
+  }
+
+  trigger?.addEventListener('click', () => {
+    if (!trigger) return
+    const isOpen = trigger.getAttribute('aria-expanded') === 'true'
+    setMobileOpen(!isOpen)
+  })
+
+  backdrop?.addEventListener('click', () => setMobileOpen(false))
+
+  panel?.querySelectorAll<HTMLButtonElement>(`[data-deal-mobile-option="${canonicalDealId}"]`).forEach((btn) => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation()
+      const tab = btn.dataset.tab as DealTabId | undefined
+      if (tab && ordered.includes(tab)) {
+        select(tab, false)
+        setMobileOpen(false)
+      }
+    })
+  })
+
+  trigger?.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      setMobileOpen(false)
+    }
   })
 }
 

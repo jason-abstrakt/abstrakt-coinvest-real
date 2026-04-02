@@ -11,6 +11,15 @@ export const DEAL_TAB_ORDER: DealTabId[] = [
   'considerations',
 ]
 
+/** Shorter labels for folder tabs on medium-width viewports (avoids awkward wrapping) */
+export const DEAL_TAB_SHORT_LABEL: Record<DealTabId, string> = {
+  summary: 'Summary',
+  structure: 'Economics',
+  business: 'Business',
+  model: 'Model',
+  considerations: 'Risks',
+}
+
 export interface DealDefinition {
   id: string
   title: string
