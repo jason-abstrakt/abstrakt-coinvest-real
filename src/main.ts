@@ -6,6 +6,14 @@ import { NDA_BODY_HTML, NDA_TITLE, NDA_PARTIES } from './nda-content.ts'
 const AUTH_KEY = 'abstrakt_co_invest_auth_v1'
 const PASSWORD_NORMALIZED = 'abstrakt2026'
 
+function escapeHtml(text: string): string {
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+}
+
 function isAuthed(): boolean {
   return sessionStorage.getItem(AUTH_KEY) === '1'
 }
@@ -271,6 +279,14 @@ function dealView(dealId: string, tab: DealTabId): string {
     })
     .join('')
 
+  const mobileOptions = tabIds
+    .map((id) => {
+      const label = escapeHtml(deal.tabs[id])
+      const sel = id === tab ? ' selected' : ''
+      return `<option value="${id}"${sel}>${label}</option>`
+    })
+    .join('')
+
   return `
     ${shellHeader()}
     <div class="canvas">
@@ -294,6 +310,17 @@ function dealView(dealId: string, tab: DealTabId): string {
         </div>
 
         <div class="tabs-folder">
+          <div class="tabs-folder__mobile">
+            <label class="tabs-folder__mobile-label" for="deal-tab-select-${cid}">Section</label>
+            <select
+              class="tabs-folder__select"
+              id="deal-tab-select-${cid}"
+              aria-controls="deal-panels-${cid}"
+              data-deal-tab-select="${cid}"
+            >
+              ${mobileOptions}
+            </select>
+          </div>
           <div
             class="tabs tabs-folder__strip"
             id="deal-tablist-${cid}"
@@ -302,7 +329,11 @@ function dealView(dealId: string, tab: DealTabId): string {
           >
             ${tabButtons.join('')}
           </div>
-          <div class="tabs-folder__body tabs__panel-stack" data-deal-panels="${cid}">
+          <div
+            class="tabs-folder__body tabs__panel-stack"
+            id="deal-panels-${cid}"
+            data-deal-panels="${cid}"
+          >
             ${tabPanels}
           </div>
         </div>
@@ -328,6 +359,11 @@ function syncDealTabDom(canonicalDealId: string, activeTab: DealTabId): void {
       btn.setAttribute('aria-selected', String(on))
       btn.tabIndex = on ? 0 : -1
     }
+  }
+
+  const tabSelect = document.querySelector<HTMLSelectElement>(`[data-deal-tab-select="${canonicalDealId}"]`)
+  if (tabSelect && tabSelect.value !== activeTab) {
+    tabSelect.value = activeTab
   }
 }
 
@@ -377,6 +413,12 @@ function setupDealTabs(canonicalDealId: string): void {
       e.preventDefault()
       select(ordered[ordered.length - 1]!, true)
     }
+  })
+
+  const mobileSelect = document.querySelector<HTMLSelectElement>(`[data-deal-tab-select="${canonicalDealId}"]`)
+  mobileSelect?.addEventListener('change', () => {
+    const v = mobileSelect.value as DealTabId
+    if (ordered.includes(v)) select(v, false)
   })
 }
 

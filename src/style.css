@@ -589,60 +589,65 @@ a:hover {
   margin-bottom: 0;
 }
 
-/* Mobile: horizontal scroll strip, 44px+ touch targets, safe areas */
+/* Desktop / tablet: folder tabs only (dropdown hidden) */
+.tabs-folder__mobile {
+  display: none;
+}
+
+/* Mobile: section dropdown only — folder tab strip hidden */
 @media (max-width: 719px) {
   .tabs-folder {
     margin-bottom: 18px;
   }
 
-  .tabs-folder__strip.tabs {
-    display: flex;
-    flex-wrap: nowrap;
-    align-items: stretch;
-    gap: 8px;
-    padding: 6px 0 0;
+  .tabs-folder__strip.tabs,
+  .tabs-folder__strip {
+    display: none !important;
+  }
+
+  .tabs-folder__mobile {
+    display: block;
+    margin-bottom: 12px;
     padding-left: max(0px, env(safe-area-inset-left));
     padding-right: max(0px, env(safe-area-inset-right));
-    overflow-x: auto;
-    overflow-y: hidden;
-    -webkit-overflow-scrolling: touch;
-    overscroll-behavior-x: contain;
-    touch-action: pan-x;
-    scroll-snap-type: x proximity;
-    scroll-padding-inline: 16px;
-    scrollbar-width: thin;
   }
 
-  .tabs-folder__strip.tabs::-webkit-scrollbar {
-    height: 4px;
+  .tabs-folder__mobile-label {
+    display: block;
+    margin: 0 0 8px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--ink-muted);
   }
 
-  .tabs-folder__strip.tabs::-webkit-scrollbar-thumb {
-    background: rgba(18, 18, 18, 0.15);
-    border-radius: 4px;
-  }
-
-  .tabs-folder .tabs__btn {
-    flex: 0 0 auto;
-    width: auto;
-    min-width: 112px;
-    max-width: min(280px, calc(100vw - 48px));
-    min-height: 44px;
-    padding: 10px 14px 11px;
-    scroll-snap-align: start;
+  .tabs-folder__select {
+    display: block;
+    box-sizing: border-box;
+    width: 100%;
+    min-height: 48px;
+    padding: 12px 40px 12px 14px;
+    font-family: inherit;
+    font-size: 0.9375rem;
+    font-weight: 600;
+    line-height: 1.3;
+    color: var(--ink);
+    background-color: var(--card);
+    border: 1px solid rgba(18, 18, 18, 0.16);
+    border-radius: 12px;
+    cursor: pointer;
     -webkit-tap-highlight-color: transparent;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 14 14' fill='none'%3E%3Cpath d='M3.5 5.25L7 8.75l3.5-3.5' stroke='%235c5c5c' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    background-color: var(--card);
   }
 
-  .tabs-folder .tabs__btn--active {
-    padding-bottom: 12px;
-  }
-
-  .tabs-folder .tabs__btn .tabs__btn-label {
-    font-size: 0.8125rem;
-    line-height: 1.25;
-    text-align: center;
-    hyphens: manual;
-    word-wrap: break-word;
+  .tabs-folder__select:focus {
+    outline: 2px solid var(--ink);
+    outline-offset: 2px;
   }
 
   .tabs-folder__body {
@@ -650,19 +655,26 @@ a:hover {
     padding-right: max(16px, env(safe-area-inset-right));
     padding-bottom: max(18px, env(safe-area-inset-bottom));
     padding-left: max(16px, env(safe-area-inset-left));
-    border-radius: 0 0 20px 20px;
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow);
   }
 }
 
+/* Shared panel shell; padding + top radius differ by breakpoint */
 .tabs-folder__body {
   position: relative;
   z-index: 1;
   margin: 0;
-  padding: 26px 28px 24px;
   background: var(--card);
   border: 1px solid rgba(18, 18, 18, 0.12);
-  border-radius: 0 0 var(--radius-lg) var(--radius-lg);
   box-shadow: var(--shadow);
+}
+
+@media (min-width: 720px) {
+  .tabs-folder__body {
+    padding: 26px 28px 24px;
+    border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+  }
 }
 
 .tabs__panel-stack {
