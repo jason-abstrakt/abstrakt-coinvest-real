@@ -329,14 +329,13 @@ function dealView(dealId: string, tab: DealTabId): string {
             <label class="tabs-folder__mobile-label" id="deal-tab-mlabel-${cid}" for="deal-tab-trigger-${cid}"
               >Section</label
             >
-            <div class="tabs-folder__mobile-backdrop" hidden data-deal-tab-backdrop="${cid}" aria-hidden="true"></div>
             <div class="tabs-folder__mobile-wrap">
               <button
                 type="button"
                 class="tabs-folder__mobile-trigger"
                 id="deal-tab-trigger-${cid}"
                 aria-expanded="false"
-                aria-haspopup="listbox"
+                aria-haspopup="dialog"
                 aria-labelledby="deal-tab-mlabel-${cid}"
                 aria-controls="deal-tab-listbox-${cid}"
                 data-deal-tab-trigger="${cid}"
@@ -348,14 +347,32 @@ function dealView(dealId: string, tab: DealTabId): string {
                   <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M5 7.5l5 5 5-5" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/></svg>
                 </span>
               </button>
-              <div
-                class="tabs-folder__mobile-panel"
-                id="deal-tab-listbox-${cid}"
-                role="listbox"
-                hidden
-                data-deal-tab-listbox="${cid}"
-                aria-labelledby="deal-tab-mlabel-${cid}"
-              >
+            </div>
+            <div class="tabs-folder__mobile-backdrop" hidden data-deal-tab-backdrop="${cid}" aria-hidden="true"></div>
+            <div
+              class="tabs-folder__mobile-sheet"
+              id="deal-tab-listbox-${cid}"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="deal-tab-sheet-title-${cid}"
+              hidden
+              data-deal-tab-listbox="${cid}"
+            >
+              <div class="tabs-folder__mobile-sheet-chrome" aria-hidden="true">
+                <span class="tabs-folder__mobile-sheet-grab"></span>
+              </div>
+              <div class="tabs-folder__mobile-sheet-header">
+                <h2 class="tabs-folder__mobile-sheet-title" id="deal-tab-sheet-title-${cid}">Choose section</h2>
+                <button
+                  type="button"
+                  class="tabs-folder__mobile-sheet-close"
+                  aria-label="Close"
+                  data-deal-tab-sheet-close="${cid}"
+                >
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M18 6L6 18M6 6l12 12"/></svg>
+                </button>
+              </div>
+              <div class="tabs-folder__mobile-sheet-scroll" role="listbox" aria-labelledby="deal-tab-sheet-title-${cid}">
                 ${mobileListOptions}
               </div>
             </div>
@@ -427,10 +444,10 @@ function syncDealTabDom(canonicalDealId: string, activeTab: DealTabId): void {
 
 function closeMobileTabPicker(canonicalDealId: string): void {
   const trigger = document.querySelector<HTMLButtonElement>(`[data-deal-tab-trigger="${canonicalDealId}"]`)
-  const panel = document.querySelector<HTMLElement>(`[data-deal-tab-listbox="${canonicalDealId}"]`)
+  const sheet = document.querySelector<HTMLElement>(`[data-deal-tab-listbox="${canonicalDealId}"]`)
   const backdrop = document.querySelector<HTMLElement>(`[data-deal-tab-backdrop="${canonicalDealId}"]`)
   trigger?.setAttribute('aria-expanded', 'false')
-  panel?.setAttribute('hidden', '')
+  sheet?.setAttribute('hidden', '')
   backdrop?.setAttribute('hidden', '')
   document.body.style.overflow = ''
 }
@@ -484,17 +501,20 @@ function setupDealTabs(canonicalDealId: string): void {
   })
 
   const trigger = document.querySelector<HTMLButtonElement>(`[data-deal-tab-trigger="${canonicalDealId}"]`)
-  const panel = document.querySelector<HTMLElement>(`[data-deal-tab-listbox="${canonicalDealId}"]`)
+  const sheet = document.querySelector<HTMLElement>(`[data-deal-tab-listbox="${canonicalDealId}"]`)
   const backdrop = document.querySelector<HTMLElement>(`[data-deal-tab-backdrop="${canonicalDealId}"]`)
+  const closeBtn = document.querySelector<HTMLButtonElement>(
+    `[data-deal-tab-sheet-close="${canonicalDealId}"]`,
+  )
 
   const setMobileOpen = (open: boolean) => {
     trigger?.setAttribute('aria-expanded', String(open))
     if (open) {
-      panel?.removeAttribute('hidden')
+      sheet?.removeAttribute('hidden')
       backdrop?.removeAttribute('hidden')
       document.body.style.overflow = 'hidden'
     } else {
-      panel?.setAttribute('hidden', '')
+      sheet?.setAttribute('hidden', '')
       backdrop?.setAttribute('hidden', '')
       document.body.style.overflow = ''
     }
@@ -506,9 +526,17 @@ function setupDealTabs(canonicalDealId: string): void {
     setMobileOpen(!isOpen)
   })
 
-  backdrop?.addEventListener('click', () => setMobileOpen(false))
+  backdrop?.addEventListener('click', () => {
+    setMobileOpen(false)
+    trigger?.focus()
+  })
 
-  panel?.querySelectorAll<HTMLButtonElement>(`[data-deal-mobile-option="${canonicalDealId}"]`).forEach((btn) => {
+  closeBtn?.addEventListener('click', () => {
+    setMobileOpen(false)
+    trigger?.focus()
+  })
+
+  sheet?.querySelectorAll<HTMLButtonElement>(`[data-deal-mobile-option="${canonicalDealId}"]`).forEach((btn) => {
     btn.addEventListener('click', (e) => {
       e.stopPropagation()
       const tab = btn.dataset.tab as DealTabId | undefined
@@ -517,12 +545,6 @@ function setupDealTabs(canonicalDealId: string): void {
         setMobileOpen(false)
       }
     })
-  })
-
-  trigger?.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') {
-      setMobileOpen(false)
-    }
   })
 }
 
@@ -605,6 +627,18 @@ function render(): void {
     render()
   })
 }
+
+document.addEventListener('keydown', (e) => {
+  if (e.key !== 'Escape') return
+  const trigger = document.querySelector<HTMLButtonElement>(
+    '[data-deal-tab-trigger][aria-expanded="true"]',
+  )
+  if (!trigger) return
+  e.preventDefault()
+  const cid = trigger.getAttribute('data-deal-tab-trigger')
+  if (cid) closeMobileTabPicker(cid)
+  trigger.focus()
+})
 
 window.addEventListener('hashchange', render)
 render()

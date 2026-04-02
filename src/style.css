@@ -625,10 +625,10 @@ a:hover {
   .tabs-folder__mobile-backdrop {
     position: fixed;
     inset: 0;
-    z-index: 80;
-    background: rgba(18, 18, 18, 0.4);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
+    z-index: 100;
+    background: rgba(18, 18, 18, 0.45);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
   }
 
   .tabs-folder__mobile-backdrop[hidden] {
@@ -637,7 +637,7 @@ a:hover {
 
   .tabs-folder__mobile-wrap {
     position: relative;
-    z-index: 90;
+    z-index: 1;
   }
 
   .tabs-folder__mobile-trigger {
@@ -699,26 +699,94 @@ a:hover {
     transition: transform 0.2s ease;
   }
 
-  .tabs-folder__mobile-panel {
-    position: absolute;
-    top: calc(100% + 10px);
+  /* Bottom sheet: always in viewport, not clipped by page scroll */
+  .tabs-folder__mobile-sheet {
+    position: fixed;
     left: 0;
     right: 0;
-    z-index: 95;
-    padding: 8px;
-    max-height: min(60vh, 420px);
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
+    bottom: 0;
+    z-index: 110;
+    display: flex;
+    flex-direction: column;
+    max-height: min(85vh, 100dvh);
+    padding: 0 max(16px, env(safe-area-inset-left)) max(12px, env(safe-area-inset-bottom))
+      max(16px, env(safe-area-inset-right));
     background: var(--card);
-    border: 1px solid rgba(18, 18, 18, 0.1);
-    border-radius: 16px;
+    border-radius: 22px 22px 0 0;
     box-shadow:
-      0 24px 60px rgba(18, 18, 18, 0.12),
-      0 0 0 1px rgba(18, 18, 18, 0.04);
+      0 -12px 48px rgba(18, 18, 18, 0.18),
+      0 0 0 1px rgba(18, 18, 18, 0.06);
   }
 
-  .tabs-folder__mobile-panel[hidden] {
+  .tabs-folder__mobile-sheet[hidden] {
     display: none !important;
+  }
+
+  .tabs-folder__mobile-sheet-chrome {
+    flex-shrink: 0;
+    display: flex;
+    justify-content: center;
+    padding: 10px 0 6px;
+  }
+
+  .tabs-folder__mobile-sheet-grab {
+    display: block;
+    width: 40px;
+    height: 5px;
+    border-radius: 999px;
+    background: rgba(18, 18, 18, 0.12);
+  }
+
+  .tabs-folder__mobile-sheet-header {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 4px 4px 12px;
+    border-bottom: 1px solid rgba(18, 18, 18, 0.08);
+  }
+
+  .tabs-folder__mobile-sheet-title {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    color: var(--ink);
+  }
+
+  .tabs-folder__mobile-sheet-close {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    margin: -8px -8px -8px 0;
+    padding: 0;
+    border: none;
+    border-radius: 12px;
+    background: transparent;
+    color: var(--ink-muted);
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .tabs-folder__mobile-sheet-close:hover,
+  .tabs-folder__mobile-sheet-close:focus-visible {
+    background: var(--canvas);
+    color: var(--ink);
+    outline: none;
+  }
+
+  .tabs-folder__mobile-sheet-scroll {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+    padding: 8px 0 4px;
+    touch-action: pan-y;
   }
 
   .tabs-folder__mobile-option {
